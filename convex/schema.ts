@@ -61,4 +61,51 @@ export default defineSchema({
   })
     .index("by_document", ["documentId"])
     .index("by_document_user", ["documentId", "userId"]),
+
+  chatChannels: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdBy: v.string(),
+    isDefault: v.optional(v.boolean()),
+    accessType: v.optional(v.string()),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  chatChannelAccess: defineTable({
+    channelId: v.id("chatChannels"),
+    userId: v.string(),
+    grantedBy: v.string(),
+  })
+    .index("by_channel", ["channelId"])
+    .index("by_channel_user", ["channelId", "userId"])
+    .index("by_user", ["userId"]),
+
+  chatMessages: defineTable({
+    channelId: v.id("chatChannels"),
+    workspaceId: v.id("workspaces"),
+    userId: v.string(),
+    body: v.string(),
+    isEdited: v.optional(v.boolean()),
+    isDeleted: v.optional(v.boolean()),
+    replyTo: v.optional(v.id("chatMessages")),
+  })
+    .index("by_channel", ["channelId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  chatTypingIndicators: defineTable({
+    channelId: v.id("chatChannels"),
+    userId: v.string(),
+    expiresAt: v.number(),
+  })
+    .index("by_channel", ["channelId"])
+    .index("by_channel_user", ["channelId", "userId"]),
+
+  chatReadStatus: defineTable({
+    channelId: v.id("chatChannels"),
+    userId: v.string(),
+    lastReadMessageId: v.optional(v.id("chatMessages")),
+    lastReadAt: v.number(),
+  })
+    .index("by_channel_user", ["channelId", "userId"]),
 });

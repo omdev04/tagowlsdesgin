@@ -5,9 +5,14 @@ import { useConvexAuth } from "convex/react";
 import { redirect } from "next/navigation";
 import Navigation from "./_components/Navigation";
 import { SearchCommand } from "@/components/search-command";
+import { ChatPanel } from "@/components/chat/ChatPanel";
+import { useChat } from "@/hooks/useChat";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isChatOpen } = useChat();
+  const { activeWorkspaceId } = useWorkspace();
 
   if (isLoading) {
     return (
@@ -21,12 +26,22 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     return redirect("/");
   }
 
+  const showChat = isChatOpen && !!activeWorkspaceId;
+
   return (
     <div className="dark:bg-dark flex h-full">
       <Navigation />
-      <main className="h-full flex-1 overflow-y-auto">
+      <main className="relative h-full flex-1 overflow-hidden">
         <SearchCommand />
-        {children}
+        {showChat ? (
+          <div className="absolute inset-0 z-50 h-full w-full">
+            <ChatPanel />
+          </div>
+        ) : (
+          <div className="h-full overflow-y-auto">
+            {children}
+          </div>
+        )}
       </main>
     </div>
   );
