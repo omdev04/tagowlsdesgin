@@ -139,9 +139,16 @@ const Navigation = () => {
       setIsCollapsed(true);
       setIsResetting(true);
 
-      sidebarRef.current.style.width = "0";
-      navbarRef.current.style.setProperty("width", "100%");
-      navbarRef.current.style.setProperty("left", "0");
+      const collapsedWidth = isMobile ? 0 : 56;
+      sidebarRef.current.style.width = `${collapsedWidth}px`;
+      navbarRef.current.style.setProperty(
+        "width",
+        isMobile ? "100%" : `calc(100% - ${collapsedWidth}px)`,
+      );
+      navbarRef.current.style.setProperty(
+        "left",
+        isMobile ? "0" : `${collapsedWidth}px`,
+      );
       setTimeout(() => setIsResetting(false), 300);
     }
   };
@@ -185,47 +192,66 @@ const Navigation = () => {
           className={cn(
             "text-muted-foreground absolute top-3 right-2 h-6 w-6 rounded-sm opacity-0 transition group-hover/sidebar:opacity-100 hover:bg-neutral-300 dark:hover:bg-neutral-600",
             isMobile && "opacity-100",
+            isCollapsed && !isMobile && "hidden",
           )}
         >
           <ChevronsLeft className="h-6 w-6" />
         </div>
-        <div>
-          <UserItem />
-          <WorkspaceSelector />
-          <Item label="Search" icon={Search} isSearch onClick={search.onOpen} />
-          <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
-          {activeWorkspaceId && (
-            <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
-          )}
-          {activeWorkspaceId && (
-            <Item label="Chat" icon={MessageCircle} onClick={toggleChat} />
-          )}
-          <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
-        </div>
-        <div className="mt-4">
-          <div>
-            <ScrollableList>
-              {activeWorkspaceId ? (
-                <WorkspaceDocumentList />
-              ) : (
-                <DocumentList />
-              )}
-            </ScrollableList>
+        {isCollapsed && !isMobile ? (
+          /* ── Icon-only strip (desktop collapsed) ── */
+          <div className="mt-2 flex flex-col">
+            <Item label="Search" icon={Search} onClick={resetWidth} isCollapsed />
+            <Item label="Settings" icon={Settings} onClick={resetWidth} isCollapsed />
+            {activeWorkspaceId && (
+              <Item label="Team" icon={Users} onClick={resetWidth} isCollapsed />
+            )}
+            {activeWorkspaceId && (
+              <Item label="Chat" icon={MessageCircle} onClick={resetWidth} isCollapsed />
+            )}
+            <Item label="New page" icon={PlusCircle} onClick={resetWidth} isCollapsed />
+            <Item label="Trash" icon={Trash} onClick={resetWidth} isCollapsed />
           </div>
-          <Item onClick={handleCreate} icon={Plus} label="Add a page" />
-          <Popover>
-            <PopoverTrigger className="mt-3 w-full">
-              <Item label="Trash" icon={Trash} />
-            </PopoverTrigger>
-            <PopoverContent
-              side={isMobile ? "bottom" : "right"}
-              className="w-72 p-0"
-              collisionPadding={16}
-            >
-              <TrashBox />
-            </PopoverContent>
-          </Popover>
-        </div>
+        ) : (
+          <>
+            <div>
+              <UserItem />
+              <WorkspaceSelector />
+              <Item label="Search" icon={Search} isSearch onClick={search.onOpen} />
+              <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
+              {activeWorkspaceId && (
+                <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
+              )}
+              {activeWorkspaceId && (
+                <Item label="Chat" icon={MessageCircle} onClick={toggleChat} />
+              )}
+              <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
+            </div>
+            <div className="mt-4">
+              <div>
+                <ScrollableList>
+                  {activeWorkspaceId ? (
+                    <WorkspaceDocumentList />
+                  ) : (
+                    <DocumentList />
+                  )}
+                </ScrollableList>
+              </div>
+              <Item onClick={handleCreate} icon={Plus} label="Add a page" />
+              <Popover>
+                <PopoverTrigger className="mt-3 w-full">
+                  <Item label="Trash" icon={Trash} />
+                </PopoverTrigger>
+                <PopoverContent
+                  side={isMobile ? "bottom" : "right"}
+                  className="w-72 p-0"
+                  collisionPadding={16}
+                >
+                  <TrashBox />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </>
+        )}
         <div
           onMouseDown={handleMouseDown}
           onClick={resetWidth}
@@ -251,7 +277,7 @@ const Navigation = () => {
               !isCollapsed && "p-0",
             )}
           >
-            {isCollapsed && (
+            {isCollapsed && isMobile && (
               <MenuIcon
                 onClick={resetWidth}
                 role="button"
