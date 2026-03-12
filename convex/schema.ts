@@ -14,7 +14,51 @@ export default defineSchema({
     allowEditing: v.optional(v.boolean()),
     order: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    workspaceId: v.optional(v.id("workspaces")),
   })
     .index("by_user", ["userId"])
-    .index("by_user_parent", ["userId", "parentDocument"]),
+    .index("by_user_parent", ["userId", "parentDocument"])
+    .index("by_workspace", ["workspaceId"]),
+
+  users: defineTable({
+    clerkId: v.string(),
+    name: v.string(),
+    email: v.string(),
+    imageUrl: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_clerk_id", ["clerkId"])
+    .index("by_email", ["email"]),
+
+  workspaces: defineTable({
+    name: v.string(),
+    ownerId: v.string(),
+    icon: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+  }).index("by_owner", ["ownerId"]),
+
+  workspaceMembers: defineTable({
+    workspaceId: v.id("workspaces"),
+    userId: v.string(),
+    role: v.string(), // "admin" | "editor" | "viewer"
+    email: v.optional(v.string()),
+    isPending: v.optional(v.boolean()),
+    joinedAt: v.optional(v.number()),
+    userName: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    userAvatar: v.optional(v.string()),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_user", ["userId"])
+    .index("by_workspace_user", ["workspaceId", "userId"])
+    .index("by_email", ["email"]),
+
+  documentAccess: defineTable({
+    documentId: v.id("documents"),
+    userId: v.string(),
+    permission: v.string(), // "edit" | "view"
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_user", ["documentId", "userId"]),
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { File } from "lucide-react";
+import { Building2, File } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -16,6 +16,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useSearch } from "@/hooks/useSearch";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { api } from "@/convex/_generated/api";
 import { DialogTitle } from "./ui/dialog";
 
@@ -23,6 +24,15 @@ export const SearchCommand = () => {
   const { user } = useUser();
   const router = useRouter();
   const documents = useQuery(api.documents.getSearch);
+  const { activeWorkspaceId } = useWorkspace();
+
+  const workspaceDocuments = useQuery(
+    api.workspaces.searchDocuments,
+    activeWorkspaceId
+      ? { workspaceId: activeWorkspaceId, query: "" }
+      : "skip",
+  );
+
   const [isMounted, setIsMounted] = useState(false);
 
   const toggle = useSearch((store) => store.toggle);
@@ -88,6 +98,27 @@ export const SearchCommand = () => {
               </CommandItem>
             ))}
           </CommandGroup>
+          {workspaceDocuments && workspaceDocuments.length > 0 && (
+            <CommandGroup heading="Workspace Documents" className="pb-1">
+              {workspaceDocuments.map((doc) => (
+                <CommandItem
+                  key={doc._id}
+                  value={`${doc.title}|ws_${doc._id}`}
+                  title={doc.title}
+                  onSelect={() => onSelect(doc._id)}
+                >
+                  {doc.icon ? (
+                    <p className="mr-2 text-[1.125rem] leading-0">
+                      {doc.icon}
+                    </p>
+                  ) : (
+                    <Building2 className="mr-2 h-4 w-4" />
+                  )}
+                  <span>{doc.title}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </CommandList>
       </Command>
     </CommandDialog>

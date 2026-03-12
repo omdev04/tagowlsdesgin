@@ -9,6 +9,8 @@
  */
 
 import type * as documents from "../documents.js";
+import type * as users from "../users.js";
+import type * as workspaces from "../workspaces.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +20,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   documents: typeof documents;
+  users: typeof users;
+  workspaces: typeof workspaces;
 }>;
 
 /**

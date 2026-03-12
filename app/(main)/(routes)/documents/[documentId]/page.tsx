@@ -13,6 +13,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { BlockNoteEditor } from "@blocknote/core";
 import { TableOfContents } from "@/components/table-of-contents";
+import { Eye } from "lucide-react";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -34,7 +35,13 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     documentId: documentId,
   });
 
+  const accessInfo = useQuery(api.workspaces.canAccessDocument, {
+    documentId: documentId,
+  });
+
   const update = useMutation(api.documents.update);
+
+  const canEdit = accessInfo?.canEdit ?? true;
 
   useEffect(() => {
     if (!document) return;
@@ -60,6 +67,7 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   }, [document?.title, document?.icon, resolvedTheme]);
 
   const onChange = (content: string) => {
+    if (!canEdit) return;
     update({
       id: documentId,
       content,
@@ -88,13 +96,20 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
 
   return (
     <div className="pb-35">
+      {!canEdit && document.workspaceId && (
+        <div className="flex items-center justify-center gap-2 bg-amber-100 py-1.5 text-sm text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+          <Eye className="h-4 w-4" />
+          View only — you don&apos;t have edit access to this document
+        </div>
+      )}
       <Cover url={document.coverImage} />
       <div className="relative mx-auto md:w-[90%]">
-        <Toolbar initialData={document} />
+        <Toolbar initialData={document} preview={!canEdit} />
         <Editor
           onChange={onChange}
           initialContent={document.content}
           onEditorReady={setEditor}
+          editable={canEdit}
         />
         <TableOfContents editor={editor} />
       </div>
