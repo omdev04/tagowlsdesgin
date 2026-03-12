@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   ChevronsLeft,
   MenuIcon,
+  MessageCircle,
   Plus,
   PlusCircle,
   Search,
@@ -32,6 +33,7 @@ import { TrashBox } from "./TrashBox";
 import { useSearch } from "@/hooks/useSearch";
 import { useSettings } from "@/hooks/useSettings";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useChat } from "@/hooks/useChat";
 import { Navbar } from "./Navbar";
 import { ScrollableList } from "@/components/scrollable-list";
 import { WorkspaceSelector } from "@/components/workspace-selector";
@@ -41,6 +43,7 @@ const Navigation = () => {
   const search = useSearch();
   const settings = useSettings();
   const { activeWorkspaceId, onTeamModalOpen } = useWorkspace();
+  const { toggleChat } = useChat();
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -193,6 +196,9 @@ const Navigation = () => {
           <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
           {activeWorkspaceId && (
             <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
+          )}
+          {activeWorkspaceId && (
+            <Item label="Chat" icon={MessageCircle} onClick={toggleChat} />
           )}
           <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
         </div>
