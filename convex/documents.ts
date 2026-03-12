@@ -280,21 +280,7 @@ export const getById = query({
       throw new Error("Not authorized");
     }
 
-    // Admin sees all
-    if (member.role === "admin") return document;
-
-    // Check document-level access
-    const access = await ctx.db
-      .query("documentAccess")
-      .withIndex("by_document_user", (q) =>
-        q.eq("documentId", args.documentId).eq("userId", userId),
-      )
-      .first();
-
-    if (!access) {
-      throw new Error("Not authorized");
-    }
-
+    // All workspace members can view workspace documents
     return document;
   },
 });
@@ -338,18 +324,7 @@ export const update = mutation({
 
         if (!member) throw new Error("Unauthorized");
 
-        if (member.role !== "admin") {
-          const access = await ctx.db
-            .query("documentAccess")
-            .withIndex("by_document_user", (q) =>
-              q.eq("documentId", args.id).eq("userId", userId),
-            )
-            .first();
-
-          if (!access || access.permission !== "edit") {
-            throw new Error("Unauthorized");
-          }
-        }
+        // All workspace members can edit workspace documents
       } else {
         throw new Error("Unauthorized");
       }

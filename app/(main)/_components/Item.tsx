@@ -36,6 +36,7 @@ interface ItemProps {
   label: string;
   onClick?: () => void;
   icon: LucideIcon;
+  isCollapsed?: boolean;
 }
 
 export const Item = ({
@@ -49,6 +50,7 @@ export const Item = ({
   level = 0,
   onExpand,
   expanded,
+  isCollapsed,
 }: ItemProps) => {
   const router = useRouter();
   const params = useParams();
@@ -103,6 +105,29 @@ export const Item = ({
   };
 
   const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+
+  if (isCollapsed) {
+    return (
+      <ActionTooltip label={label} side="right">
+        <div
+          onClick={onClick}
+          role="button"
+          className={cn(
+            "text-muted-foreground hover:bg-primary/5 flex h-9 w-full cursor-pointer items-center justify-center",
+            active && "bg-primary/5 text-primary",
+          )}
+        >
+          {documentIcon ? (
+            <span className="shrink-0 text-[1.125rem] leading-none">
+              {documentIcon}
+            </span>
+          ) : (
+            <Icon className="text-muted-foreground h-5 w-5 shrink-0" />
+          )}
+        </div>
+      </ActionTooltip>
+    );
+  }
 
   return (
     <div
