@@ -49,6 +49,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   }, [initialData.title]);
 
   useEffect(() => {
+    if (preview) return;
     if (value === initialData.title) return;
 
     const timer = setTimeout(() => {

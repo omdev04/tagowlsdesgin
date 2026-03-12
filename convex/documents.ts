@@ -260,7 +260,38 @@ export const getById = query({
 
     const userId = identity.subject;
 
-    if (document.userId !== userId) {
+    // Personal document
+    if (!document.workspaceId) {
+      if (document.userId !== userId) {
+        throw new Error("Not authorized");
+      }
+      return document;
+    }
+
+    // Workspace document - check membership
+    const member = await ctx.db
+      .query("workspaceMembers")
+      .withIndex("by_workspace_user", (q) =>
+        q.eq("workspaceId", document.workspaceId!).eq("userId", userId),
+      )
+      .first();
+
+    if (!member) {
+      throw new Error("Not authorized");
+    }
+
+    // Admin sees all
+    if (member.role === "admin") return document;
+
+    // Check document-level access
+    const access = await ctx.db
+      .query("documentAccess")
+      .withIndex("by_document_user", (q) =>
+        q.eq("documentId", args.documentId).eq("userId", userId),
+      )
+      .first();
+
+    if (!access) {
       throw new Error("Not authorized");
     }
 
@@ -296,7 +327,32 @@ export const update = mutation({
     }
 
     if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
+      // Check workspace access for editing
+      if (existingDocument.workspaceId) {
+        const member = await ctx.db
+          .query("workspaceMembers")
+          .withIndex("by_workspace_user", (q) =>
+            q.eq("workspaceId", existingDocument.workspaceId!).eq("userId", userId),
+          )
+          .first();
+
+        if (!member) throw new Error("Unauthorized");
+
+        if (member.role !== "admin") {
+          const access = await ctx.db
+            .query("documentAccess")
+            .withIndex("by_document_user", (q) =>
+              q.eq("documentId", args.id).eq("userId", userId),
+            )
+            .first();
+
+          if (!access || access.permission !== "edit") {
+            throw new Error("Unauthorized");
+          }
+        }
+      } else {
+        throw new Error("Unauthorized");
+      }
     }
 
     const document = await ctx.db.patch(args.id, {

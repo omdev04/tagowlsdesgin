@@ -4,6 +4,7 @@ import React, { ComponentRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import { useMutation } from "convex/react";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
@@ -20,6 +21,7 @@ import {
   Search,
   Settings,
   Trash,
+  Users,
 } from "lucide-react";
 import {
   Popover,
@@ -29,17 +31,35 @@ import {
 import { TrashBox } from "./TrashBox";
 import { useSearch } from "@/hooks/useSearch";
 import { useSettings } from "@/hooks/useSettings";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Navbar } from "./Navbar";
 import { ScrollableList } from "@/components/scrollable-list";
+import { WorkspaceSelector } from "@/components/workspace-selector";
+import { WorkspaceDocumentList } from "@/components/workspace-document-list";
 
 const Navigation = () => {
   const search = useSearch();
   const settings = useSettings();
+  const { activeWorkspaceId, onTeamModalOpen } = useWorkspace();
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const create = useMutation(api.documents.create);
+  const syncUser = useMutation(api.users.syncUser);
+  const { user } = useUser();
+  const createWsDoc = useMutation(api.workspaces.createDocument);
+
+  // Sync user on mount
+  useEffect(() => {
+    if (user) {
+      syncUser({
+        name: user.fullName ?? user.firstName ?? "User",
+        email: user.primaryEmailAddress?.emailAddress ?? "",
+        imageUrl: user.imageUrl,
+      }).catch(() => {});
+    }
+  }, [user, syncUser]);
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<ComponentRef<"aside">>(null);
@@ -124,15 +144,26 @@ const Navigation = () => {
   };
 
   const handleCreate = () => {
-    const promise = create({ title: "Untitled" }).then((documentId) =>
-      router.push(`/documents/${documentId}`),
-    );
-
-    toast.promise(promise, {
-      loading: "Creating a new note....",
-      success: "New note created.",
-      error: "Failed to create a note.",
-    });
+    if (activeWorkspaceId) {
+      const promise = createWsDoc({
+        workspaceId: activeWorkspaceId,
+        title: "Untitled",
+      }).then((documentId) => router.push(`/documents/${documentId}`));
+      toast.promise(promise, {
+        loading: "Creating a new note....",
+        success: "New note created.",
+        error: "Failed to create a note.",
+      });
+    } else {
+      const promise = create({ title: "Untitled" }).then((documentId) =>
+        router.push(`/documents/${documentId}`),
+      );
+      toast.promise(promise, {
+        loading: "Creating a new note....",
+        success: "New note created.",
+        error: "Failed to create a note.",
+      });
+    }
   };
 
   return (
@@ -157,14 +188,22 @@ const Navigation = () => {
         </div>
         <div>
           <UserItem />
+          <WorkspaceSelector />
           <Item label="Search" icon={Search} isSearch onClick={search.onOpen} />
           <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
+          {activeWorkspaceId && (
+            <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
+          )}
           <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
         </div>
         <div className="mt-4">
           <div>
             <ScrollableList>
-              <DocumentList />
+              {activeWorkspaceId ? (
+                <WorkspaceDocumentList />
+              ) : (
+                <DocumentList />
+              )}
             </ScrollableList>
           </div>
           <Item onClick={handleCreate} icon={Plus} label="Add a page" />
