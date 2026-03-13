@@ -218,9 +218,7 @@ export const ChatPanel = () => {
   const workspaceMemberCount = members?.filter((m) => !m.isPending).length ?? 0;
   const currentAccessType = (channelAccess?.channel.accessType ?? activeChannel?.accessType ?? "workspace") as "workspace" | "restricted";
   const visibleChannelMembers = channelAccess?.members.filter((member) => member.hasAccess) ?? [];
-  const listedChannelMembers = currentAccessType === "workspace"
-    ? (channelAccess?.members ?? [])
-    : visibleChannelMembers;
+  const listedChannelMembers = channelAccess?.members ?? [];
 
   const typingText =
     typingUsers && typingUsers.length > 0
@@ -544,7 +542,7 @@ export const ChatPanel = () => {
               {listedChannelMembers.length > 0 && (
                 <div className="mb-1">
                   <p className="text-muted-foreground mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider">
-                    {(currentAccessType ?? "workspace") === "workspace" ? "Workspace Members" : "Allowed Members"} — {visibleChannelMembers.length}
+                    Workspace Members — {visibleChannelMembers.length} allowed
                   </p>
                   {listedChannelMembers
                     .map((member) => {
