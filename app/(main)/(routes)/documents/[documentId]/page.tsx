@@ -47,7 +47,7 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
 
   const update = useMutation(api.documents.update);
 
-  const canEdit = accessInfo?.canEdit ?? true;
+  const canEdit = accessInfo?.canEdit ?? false;
 
   useEffect(() => {
     if (!document) return;
@@ -82,6 +82,7 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     if (!canEdit) return;
     update({
       id: documentId,
+      workspaceContextId: activeWorkspaceId ?? undefined,
       content,
     });
   };

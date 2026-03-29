@@ -16,9 +16,11 @@ import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const CoverImageModal = () => {
   const params = useParams();
+  const { activeWorkspaceId } = useWorkspace();
 
   const [file, setFile] = useState<File>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,6 +92,7 @@ export const CoverImageModal = () => {
 
       await update({
         id: params.documentId as Id<"documents">,
+        workspaceContextId: activeWorkspaceId ?? undefined,
         coverImage: res.url,
       });
 

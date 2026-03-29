@@ -36,6 +36,7 @@ export const Title = ({ initialData }: TitleProps) => {
     setTitle(event.target.value);
     update({
       id: initialData._id,
+      workspaceContextId: initialData.workspaceId ?? undefined,
       title: event.target.value || "Untitled",
     });
   };

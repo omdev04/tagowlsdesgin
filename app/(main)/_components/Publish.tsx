@@ -33,6 +33,7 @@ export const Publish = ({ initialData }: PublishProps) => {
 
     const promise = update({
       id: initialData._id,
+      workspaceContextId: initialData.workspaceId ?? undefined,
       isPublished: true,
     }).finally(() => setIsSubmitting(false));
 
@@ -48,6 +49,7 @@ export const Publish = ({ initialData }: PublishProps) => {
 
     const promise = update({
       id: initialData._id,
+      workspaceContextId: initialData.workspaceId ?? undefined,
       isPublished: false,
       allowEditing: false,
     }).finally(() => setIsSubmitting(false));
@@ -66,6 +68,7 @@ export const Publish = ({ initialData }: PublishProps) => {
 
     const promise = update({
       id: initialData._id,
+      workspaceContextId: initialData.workspaceId ?? undefined,
       allowEditing: newAllowEditing,
     }).finally(() => setIsSubmitting(false));
 

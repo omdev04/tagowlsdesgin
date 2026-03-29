@@ -337,6 +337,7 @@ export const getById = query({
 export const update = mutation({
   args: {
     id: v.id("documents"),
+    workspaceContextId: v.optional(v.id("workspaces")),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
@@ -353,7 +354,7 @@ export const update = mutation({
 
     const userId = identity.subject;
 
-    const { id, ...rest } = args;
+    const { id, workspaceContextId, ...rest } = args;
 
     const existingDocument = await ctx.db.get(args.id);
 
@@ -361,21 +362,42 @@ export const update = mutation({
       throw new Error("Document not found");
     }
 
-    if (existingDocument.userId !== userId) {
-      // Check workspace access for editing
-      if (existingDocument.workspaceId) {
-        const member = await ctx.db
-          .query("workspaceMembers")
-          .withIndex("by_workspace_user", (q) =>
-            q.eq("workspaceId", existingDocument.workspaceId!).eq("userId", userId),
+    // Enforce strict isolation between personal and workspace contexts.
+    if (workspaceContextId !== undefined) {
+      if (existingDocument.workspaceId !== workspaceContextId) {
+        throw new Error("Unauthorized");
+      }
+    } else if (existingDocument.workspaceId) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!existingDocument.workspaceId) {
+      if (existingDocument.userId !== userId) {
+        throw new Error("Unauthorized");
+      }
+    } else {
+      const member = await ctx.db
+        .query("workspaceMembers")
+        .withIndex("by_workspace_user", (q) =>
+          q.eq("workspaceId", existingDocument.workspaceId!).eq("userId", userId),
+        )
+        .first();
+
+      if (!member) {
+        throw new Error("Unauthorized");
+      }
+
+      if (member.role !== "admin") {
+        const access = await ctx.db
+          .query("documentAccess")
+          .withIndex("by_document_user", (q) =>
+            q.eq("documentId", args.id).eq("userId", userId),
           )
           .first();
 
-        if (!member) throw new Error("Unauthorized");
-
-        // All workspace members can edit workspace documents
-      } else {
-        throw new Error("Unauthorized");
+        if (!access || access.permission !== "edit") {
+          throw new Error("Unauthorized");
+        }
       }
     }
 
