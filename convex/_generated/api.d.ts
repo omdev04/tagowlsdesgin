@@ -9,7 +9,12 @@
  */
 
 import type * as chat from "../chat.js";
+import type * as comments from "../comments.js";
 import type * as documents from "../documents.js";
+import type * as issues from "../issues.js";
+import type * as labels from "../labels.js";
+import type * as projectColumns from "../projectColumns.js";
+import type * as projects from "../projects.js";
 import type * as users from "../users.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -21,7 +26,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   chat: typeof chat;
+  comments: typeof comments;
   documents: typeof documents;
+  issues: typeof issues;
+  labels: typeof labels;
+  projectColumns: typeof projectColumns;
+  projects: typeof projects;
   users: typeof users;
   workspaces: typeof workspaces;
 }>;

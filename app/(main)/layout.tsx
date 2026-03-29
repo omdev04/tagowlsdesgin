@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Spinner } from "@/components/spinner";
 import { useConvexAuth } from "convex/react";
-import { redirect } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import Navigation from "./_components/Navigation";
 import { SearchCommand } from "@/components/search-command";
 import { ChatPanel } from "@/components/chat/ChatPanel";
@@ -11,8 +12,17 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const { isChatOpen } = useChat();
+  const { isChatOpen, closeChat } = useChat();
   const { activeWorkspaceId } = useWorkspace();
+  const pathname = usePathname();
+  const previousPathRef = useRef(pathname);
+
+  useEffect(() => {
+    if (previousPathRef.current !== pathname && isChatOpen) {
+      closeChat();
+    }
+    previousPathRef.current = pathname;
+  }, [pathname, isChatOpen, closeChat]);
 
   if (isLoading) {
     return (

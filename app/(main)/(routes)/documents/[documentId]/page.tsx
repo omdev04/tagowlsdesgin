@@ -110,6 +110,10 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     );
   }
 
+  if (accessInfo && !accessInfo.canAccess) {
+    return <div>Not found</div>;
+  }
+
   return (
     <div className="pb-35">
       {!canEdit && document.workspaceId && (

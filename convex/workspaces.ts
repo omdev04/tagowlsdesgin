@@ -532,9 +532,11 @@ export const canAccessDocument = query({
     if (!doc) return { canAccess: false, canEdit: false };
 
     if (args.workspaceContextId !== undefined) {
-      if (doc.workspaceId !== args.workspaceContextId) {
+      if (!doc.workspaceId || doc.workspaceId !== args.workspaceContextId) {
         return { canAccess: false, canEdit: false };
       }
+    } else if (doc.workspaceId) {
+      return { canAccess: false, canEdit: false };
     }
 
     // Personal doc
