@@ -23,8 +23,10 @@ import { DialogTitle } from "./ui/dialog";
 export const SearchCommand = () => {
   const { user } = useUser();
   const router = useRouter();
-  const documents = useQuery(api.documents.getSearch);
   const { activeWorkspaceId } = useWorkspace();
+  const documents = useQuery(api.documents.getSearch, {
+    workspaceContextId: activeWorkspaceId || undefined,
+  });
 
   const workspaceDocuments = useQuery(
     api.workspaces.searchDocuments,

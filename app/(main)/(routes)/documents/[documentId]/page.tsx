@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, use, useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 import { Cover } from "@/components/cover";
 import { Toolbar } from "@/components/toolbar";
@@ -14,6 +15,7 @@ import { useMutation, useQuery } from "convex/react";
 import { BlockNoteEditor } from "@blocknote/core";
 import { TableOfContents } from "@/components/table-of-contents";
 import { Eye } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -25,6 +27,8 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   const { documentId } = use(params);
   const [editor, setEditor] = useState<BlockNoteEditor | null>(null);
   const { resolvedTheme } = useTheme();
+  const { activeWorkspaceId } = useWorkspace();
+  const router = useRouter();
 
   const Editor = useMemo(
     () => dynamic(() => import("@/components/editor"), { ssr: false }),
@@ -33,10 +37,12 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
 
   const document = useQuery(api.documents.getById, {
     documentId: documentId,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   const accessInfo = useQuery(api.workspaces.canAccessDocument, {
     documentId: documentId,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   const update = useMutation(api.documents.update);
@@ -66,6 +72,12 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     };
   }, [document?.title, document?.icon, resolvedTheme]);
 
+  useEffect(() => {
+    if (document === null) {
+      router.replace("/documents");
+    }
+  }, [document, router]);
+
   const onChange = (content: string) => {
     if (!canEdit) return;
     update({
@@ -91,7 +103,11 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   }
 
   if (document === null) {
-    return <div>Not found</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        Redirecting...
+      </div>
+    );
   }
 
   return (

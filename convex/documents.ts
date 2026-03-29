@@ -53,6 +53,7 @@ export const archive = mutation({
 export const getSidebar = query({
   args: {
     parentDocument: v.optional(v.id("documents")),
+    workspaceContextId: v.optional(v.id("workspaces")),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -63,7 +64,7 @@ export const getSidebar = query({
 
     const userId = identity.subject;
 
-    const documents = await ctx.db
+    let documents = await ctx.db
       .query("documents")
       .withIndex("by_user_parent", (q) =>
         q.eq("userId", userId).eq("parentDocument", args.parentDocument),
@@ -71,6 +72,11 @@ export const getSidebar = query({
       .filter((q) => q.eq(q.field("isArchived"), false))
       .order("desc")
       .collect();
+
+    // Filter by active workspace
+    documents = documents.filter(
+      (doc) => doc.workspaceId === args.workspaceContextId,
+    );
 
     documents.sort((a, b) => {
       if (a.order === undefined && b.order === undefined) {
@@ -90,6 +96,7 @@ export const create = mutation({
   args: {
     title: v.string(),
     parentDocument: v.optional(v.id("documents")),
+    workspaceId: v.optional(v.id("workspaces")),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -103,6 +110,7 @@ export const create = mutation({
     const document = await ctx.db.insert("documents", {
       title: args.title,
       parentDocument: args.parentDocument,
+      workspaceId: args.workspaceId,
       userId,
       isArchived: false,
       isPublished: false,
@@ -113,7 +121,10 @@ export const create = mutation({
 });
 
 export const getTrash = query({
-  handler: async (ctx) => {
+  args: {
+    workspaceContextId: v.optional(v.id("workspaces")),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
@@ -122,12 +133,16 @@ export const getTrash = query({
 
     const userId = identity.subject;
 
-    const documents = await ctx.db
+    let documents = await ctx.db
       .query("documents")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("isArchived"), true))
       .order("desc")
       .collect();
+
+    documents = documents.filter(
+      (doc) => doc.workspaceId === args.workspaceContextId,
+    );
 
     return documents;
   },
@@ -219,7 +234,10 @@ export const remove = mutation({
 });
 
 export const getSearch = query({
-  handler: async (ctx) => {
+  args: {
+    workspaceContextId: v.optional(v.id("workspaces")),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
@@ -228,26 +246,40 @@ export const getSearch = query({
 
     const userId = identity.subject;
 
-    const documents = await ctx.db
+    let documents = await ctx.db
       .query("documents")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("isArchived"), false))
       .order("desc")
       .collect();
 
+    documents = documents.filter(
+      (doc) => doc.workspaceId === args.workspaceContextId,
+    );
+
     return documents;
   },
 });
 
 export const getById = query({
-  args: { documentId: v.id("documents") },
+  args: {
+    documentId: v.id("documents"),
+    workspaceContextId: v.optional(v.id("workspaces")),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     const document = await ctx.db.get(args.documentId);
 
     if (!document) {
-      throw new Error("Document not found");
+      return null;
+    }
+
+    // Enforce workspace isolation only when caller provides explicit context.
+    if (args.workspaceContextId !== undefined) {
+      if (document.workspaceId !== args.workspaceContextId) {
+        return null;
+      }
     }
 
     if (document.isPublished && !document.isArchived) {
@@ -255,7 +287,7 @@ export const getById = query({
     }
 
     if (!identity) {
-      throw new Error("Not authenticated");
+      return null;
     }
 
     const userId = identity.subject;
@@ -263,7 +295,7 @@ export const getById = query({
     // Personal document
     if (!document.workspaceId) {
       if (document.userId !== userId) {
-        throw new Error("Not authorized");
+        return null;
       }
       return document;
     }
@@ -277,7 +309,7 @@ export const getById = query({
       .first();
 
     if (!member) {
-      throw new Error("Not authorized");
+      return null;
     }
 
     // All workspace members can view workspace documents

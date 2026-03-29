@@ -520,13 +520,22 @@ export const getDocumentAccess = query({
 });
 
 export const canAccessDocument = query({
-  args: { documentId: v.id("documents") },
+  args: {
+    documentId: v.id("documents"),
+    workspaceContextId: v.optional(v.id("workspaces")),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return { canAccess: false, canEdit: false };
 
     const doc = await ctx.db.get(args.documentId);
     if (!doc) return { canAccess: false, canEdit: false };
+
+    if (args.workspaceContextId !== undefined) {
+      if (doc.workspaceId !== args.workspaceContextId) {
+        return { canAccess: false, canEdit: false };
+      }
+    }
 
     // Personal doc
     if (!doc.workspaceId) {

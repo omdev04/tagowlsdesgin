@@ -8,14 +8,19 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 const DocumentsPage = () => {
   const { user } = useUser();
   const router = useRouter();
   const create = useMutation(api.documents.create);
+  const { activeWorkspaceId } = useWorkspace();
 
   const onCreate = () => {
-    const promise = create({ title: "Untitled" }).then((documentId) =>
+    const promise = create({
+      title: "Untitled",
+      workspaceId: activeWorkspaceId || undefined,
+    }).then((documentId) =>
       router.push(`/documents/${documentId}`),
     );
 
