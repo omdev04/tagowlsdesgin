@@ -73,10 +73,10 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   }, [document?.title, document?.icon, resolvedTheme]);
 
   useEffect(() => {
-    if (document === null) {
+    if (document === null || (accessInfo && !accessInfo.canAccess)) {
       router.replace("/documents");
     }
-  }, [document, router]);
+  }, [document, accessInfo, router]);
 
   const onChange = (content: string) => {
     if (!canEdit) return;
@@ -102,16 +102,12 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     );
   }
 
-  if (document === null) {
+  if (document === null || (accessInfo && !accessInfo.canAccess)) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
         Redirecting...
       </div>
     );
-  }
-
-  if (accessInfo && !accessInfo.canAccess) {
-    return <div>Not found</div>;
   }
 
   return (
