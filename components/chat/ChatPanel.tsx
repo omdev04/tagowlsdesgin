@@ -241,12 +241,12 @@ export const ChatPanel = () => {
   ) ?? [];
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-white dark:bg-neutral-950">
+    <div className="flex h-full w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
       {/* ── Left: Channel Sidebar ── */}
-      <div className="flex w-60 shrink-0 flex-col border-r bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="flex w-60 shrink-0 flex-col border-r bg-neutral-50 dark:border-[#222] dark:bg-[#111]">
         {/* Workspace name */}
-        <div className="flex items-center gap-2 border-b px-4 py-4 dark:border-neutral-800">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
+        <div className="flex items-center gap-2 border-b px-4 py-4 dark:border-[#222]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-sm font-bold text-white shadow-sm">
             {workspace?.icon ?? workspace?.name?.charAt(0)?.toUpperCase() ?? "W"}
           </div>
           <div className="min-w-0">
@@ -305,14 +305,14 @@ export const ChatPanel = () => {
                     className={cn(
                       "flex flex-1 min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
                       isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800",
+                        ? "bg-blue-500/10 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400 font-medium"
+                        : "text-neutral-600 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-[#222]",
                     )}
                   >
                     <Hash
                       className={cn(
                         "h-4 w-4 shrink-0",
-                        isActive ? "text-white" : "text-neutral-400",
+                        isActive ? "text-blue-500 dark:text-blue-400" : "text-neutral-500",
                       )}
                     />
                     <span className="truncate font-medium">{ch.name}</span>
@@ -343,12 +343,12 @@ export const ChatPanel = () => {
         </div>
 
         {/* Current user */}
-        <div className="flex items-center gap-2 border-t px-4 py-3 dark:border-neutral-800">
+        <div className="flex items-center gap-2 border-t px-4 py-3 dark:border-[#222]">
           <div className="relative">
-            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xs font-bold text-white">
+            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-xs font-bold text-white shadow-sm">
               {user?.firstName?.charAt(0)?.toUpperCase() ?? "?"}
             </div>
-            <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full border-2 border-white bg-green-500 dark:border-neutral-900" />
+            <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full border-2 border-white bg-green-500 dark:border-[#111]" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-xs font-medium">{user?.fullName}</p>
@@ -364,7 +364,7 @@ export const ChatPanel = () => {
           {resolvedChannelId && activeChannel ? (
             <>
               {/* Channel header */}
-              <div className="flex items-center gap-3 border-b px-6 py-3.5 dark:border-neutral-800">
+              <div className="flex items-center gap-3 border-b px-6 py-3.5 dark:border-[#222]">
                 <Hash className="h-5 w-5 text-neutral-400" />
                 <div>
                   <h2 className="text-base font-semibold">{activeChannel.name}</h2>
@@ -376,10 +376,10 @@ export const ChatPanel = () => {
                   <button
                     onClick={() => setShowMembers((v) => !v)}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors border",
                       showMembers
-                        ? "bg-blue-600 text-white"
-                        : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                        ? "border-transparent bg-neutral-200 text-neutral-900 dark:bg-[#222] dark:text-white"
+                        : "border-transparent text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#1a1a1a]",
                     )}
                     title="Toggle team members"
                   >
@@ -431,7 +431,7 @@ export const ChatPanel = () => {
               {showScrollBtn && (
                 <button
                   onClick={scrollToBottom}
-                  className="absolute bottom-20 right-8 flex items-center gap-1 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-md hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+                  className="absolute bottom-20 right-8 flex items-center gap-1 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-md hover:bg-neutral-50 dark:border-[#333] dark:bg-[#1a1a1a] dark:hover:bg-[#222]"
                 >
                   <ChevronDown className="h-3.5 w-3.5" />
                   New messages
@@ -460,8 +460,8 @@ export const ChatPanel = () => {
 
         {/* ── Channel Access sidebar ── */}
         {showMembers && (
-          <div className="flex w-64 shrink-0 flex-col border-l bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="flex items-center justify-between border-b px-4 py-3.5 dark:border-neutral-800">
+          <div className="flex w-64 shrink-0 flex-col border-l bg-neutral-50 dark:border-[#222] dark:bg-[#111]">
+            <div className="flex items-center justify-between border-b px-4 py-3.5 dark:border-[#222]">
               <div className="flex items-center gap-2">
                 <UserCog className="h-4 w-4 text-blue-600" />
                 <span className="text-sm font-semibold">Channel Access</span>
@@ -475,8 +475,8 @@ export const ChatPanel = () => {
             </div>
 
             {activeChannel && (
-              <div className="border-b px-3 py-3 dark:border-neutral-800">
-                <div className="mb-3 flex items-center gap-2 rounded-md bg-white px-3 py-2 shadow-sm dark:bg-neutral-950">
+              <div className="border-b px-3 py-3 dark:border-[#222]">
+                <div className="mb-3 flex items-center gap-2 rounded-md bg-white px-3 py-2 shadow-sm dark:bg-[#1a1a1a] dark:border dark:border-[#222]">
                   {(currentAccessType ?? "workspace") === "workspace" ? (
                     <Globe className="h-4 w-4 text-emerald-600" />
                   ) : (
@@ -502,7 +502,7 @@ export const ChatPanel = () => {
                         "rounded-md border px-2 py-2 text-xs font-medium transition-colors",
                         currentAccessType === "workspace"
                           ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                          : "border-neutral-200 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800",
+                          : "border-neutral-200 hover:bg-neutral-100 dark:border-[#333] dark:hover:bg-[#1a1a1a]",
                       )}
                     >
                       Workspace
@@ -513,7 +513,7 @@ export const ChatPanel = () => {
                         "rounded-md border px-2 py-2 text-xs font-medium transition-colors",
                         currentAccessType === "restricted"
                           ? "border-amber-600 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
-                          : "border-neutral-200 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800",
+                          : "border-neutral-200 hover:bg-neutral-100 dark:border-[#333] dark:hover:bg-[#1a1a1a]",
                       )}
                     >
                       Restricted
@@ -607,7 +607,7 @@ export const ChatPanel = () => {
               )}
 
               {currentAccessType === "restricted" && visibleChannelMembers.length === 0 && (
-                <div className="mx-2 rounded-md border border-dashed px-3 py-4 text-center dark:border-neutral-700">
+                <div className="mx-2 rounded-md border border-dashed px-3 py-4 text-center dark:border-[#333]">
                   <Lock className="mx-auto mb-2 h-4 w-4 text-amber-600" />
                   <p className="text-xs font-medium">No explicit channel members yet</p>
                   <p className="text-muted-foreground mt-1 text-[11px]">
@@ -617,7 +617,7 @@ export const ChatPanel = () => {
               )}
 
               {currentAccessType === "workspace" && (
-                <div className="mx-2 rounded-md border border-dashed px-3 py-4 text-center dark:border-neutral-700">
+                <div className="mx-2 rounded-md border border-dashed px-3 py-4 text-center dark:border-[#333]">
                   <Check className="mx-auto mb-2 h-4 w-4 text-emerald-600" />
                   <p className="text-xs font-medium">Everyone in the workspace can access this channel</p>
                   <p className="text-muted-foreground mt-1 text-[11px]">

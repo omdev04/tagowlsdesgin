@@ -23,6 +23,7 @@ import {
   Settings,
   Trash,
   Users,
+  Folder,
 } from "lucide-react";
 import {
   Popover,
@@ -203,6 +204,9 @@ const Navigation = () => {
             <Item label="Search" icon={Search} onClick={resetWidth} isCollapsed />
             <Item label="Settings" icon={Settings} onClick={resetWidth} isCollapsed />
             {activeWorkspaceId && (
+              <Item label="Projects" icon={Folder} onClick={resetWidth} isCollapsed />
+            )}
+            {activeWorkspaceId && (
               <Item label="Team" icon={Users} onClick={resetWidth} isCollapsed />
             )}
             {activeWorkspaceId && (
@@ -218,6 +222,9 @@ const Navigation = () => {
               <WorkspaceSelector />
               <Item label="Search" icon={Search} isSearch onClick={search.onOpen} />
               <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
+              {activeWorkspaceId && (
+                <Item label="Projects" icon={Folder} onClick={() => router.push("/projects")} />
+              )}
               {activeWorkspaceId && (
                 <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
               )}

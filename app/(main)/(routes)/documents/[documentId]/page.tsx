@@ -14,6 +14,7 @@ import { useMutation, useQuery } from "convex/react";
 import { BlockNoteEditor } from "@blocknote/core";
 import { TableOfContents } from "@/components/table-of-contents";
 import { Eye } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -25,6 +26,7 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   const { documentId } = use(params);
   const [editor, setEditor] = useState<BlockNoteEditor | null>(null);
   const { resolvedTheme } = useTheme();
+  const { activeWorkspaceId } = useWorkspace();
 
   const Editor = useMemo(
     () => dynamic(() => import("@/components/editor"), { ssr: false }),
@@ -33,10 +35,12 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
 
   const document = useQuery(api.documents.getById, {
     documentId: documentId,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   const accessInfo = useQuery(api.workspaces.canAccessDocument, {
     documentId: documentId,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   const update = useMutation(api.documents.update);
@@ -91,6 +95,10 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   }
 
   if (document === null) {
+    return <div>Not found</div>;
+  }
+
+  if (accessInfo && !accessInfo.canAccess) {
     return <div>Not found</div>;
   }
 

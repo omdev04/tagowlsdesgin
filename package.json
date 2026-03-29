@@ -21,6 +21,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@edgestore/react": "^0.7.0",
     "@edgestore/server": "^0.7.0",
+    "@radix-ui/react-select": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

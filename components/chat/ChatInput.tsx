@@ -57,20 +57,20 @@ export const ChatInput = ({ channelId }: ChatInputProps) => {
   };
 
   return (
-    <div className="border-t dark:border-neutral-700">
+    <div className="border-t dark:border-[#222]">
       {replyMessage && (
-        <div className="flex items-center gap-2 border-b bg-blue-50 px-3 py-1.5 text-xs dark:border-neutral-700 dark:bg-blue-950/20">
+        <div className="flex items-center gap-2 border-b bg-blue-50 px-3 py-1.5 text-xs dark:border-[#222] dark:bg-[#111]">
           <CornerUpLeft className="h-3 w-3 shrink-0 text-blue-500" />
           <span className="text-muted-foreground truncate">
             Replying to{" "}
-            <span className="font-medium text-blue-600 dark:text-blue-400">
+            <span className="font-medium text-blue-500 dark:text-blue-400">
               {replyMessage.user?.name ?? "someone"}
             </span>
             : {replyMessage.body.slice(0, 50)}
           </span>
           <button
             onClick={() => setReplyTo(null)}
-            className="ml-auto shrink-0 rounded p-0.5 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+            className="ml-auto shrink-0 rounded p-0.5 hover:bg-neutral-200 dark:hover:bg-[#222]"
           >
             <X className="h-3 w-3" />
           </button>
@@ -91,12 +91,12 @@ export const ChatInput = ({ channelId }: ChatInputProps) => {
             }
           }}
           placeholder="Type a message..."
-          className="h-8 flex-1 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-700"
+          className="h-8 flex-1 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-1 focus:ring-blue-400 dark:border-[#222] dark:bg-[#111]"
         />
         <button
           onClick={handleSend}
           disabled={!body.trim()}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white transition hover:bg-blue-700 disabled:opacity-40"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-500 text-white transition hover:bg-blue-600 disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
         </button>

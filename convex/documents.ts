@@ -240,14 +240,27 @@ export const getSearch = query({
 });
 
 export const getById = query({
-  args: { documentId: v.id("documents") },
+  args: {
+    documentId: v.id("documents"),
+    workspaceContextId: v.optional(v.id("workspaces")),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     const document = await ctx.db.get(args.documentId);
 
     if (!document) {
-      throw new Error("Document not found");
+      return null;
+    }
+
+    // Enforce strict workspace isolation in authenticated app context.
+    if (args.workspaceContextId !== undefined) {
+      if (!document.workspaceId || document.workspaceId !== args.workspaceContextId) {
+        return null;
+      }
+    } else if (document.workspaceId && identity) {
+      // Authenticated users in personal context cannot open workspace docs.
+      return null;
     }
 
     if (document.isPublished && !document.isArchived) {
@@ -255,7 +268,7 @@ export const getById = query({
     }
 
     if (!identity) {
-      throw new Error("Not authenticated");
+      return null;
     }
 
     const userId = identity.subject;
@@ -263,7 +276,7 @@ export const getById = query({
     // Personal document
     if (!document.workspaceId) {
       if (document.userId !== userId) {
-        throw new Error("Not authorized");
+        return null;
       }
       return document;
     }
@@ -277,10 +290,24 @@ export const getById = query({
       .first();
 
     if (!member) {
-      throw new Error("Not authorized");
+      return null;
     }
 
-    // All workspace members can view workspace documents
+    if (member.role === "admin") {
+      return document;
+    }
+
+    const access = await ctx.db
+      .query("documentAccess")
+      .withIndex("by_document_user", (q) =>
+        q.eq("documentId", args.documentId).eq("userId", userId),
+      )
+      .first();
+
+    if (!access) {
+      return null;
+    }
+
     return document;
   },
 });
