@@ -284,7 +284,6 @@ export const getById = query({
       // Authenticated users in personal context cannot open workspace docs.
       return null;
     }
-    }
 
     if (document.isPublished && !document.isArchived) {
       return document;
@@ -329,7 +328,6 @@ export const getById = query({
 
     if (!access) {
       return null;
-    }
     }
 
     return document;
