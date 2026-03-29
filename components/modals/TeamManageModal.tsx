@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Crown,
-  Mail,
   Search,
   Shield,
   Pencil,
@@ -198,25 +197,6 @@ export const TeamManageModal = () => {
                   No users found
                 </p>
               )}
-
-            {/* Invite by email */}
-            <div className="flex items-center gap-1">
-              <Mail className="text-muted-foreground h-4 w-4 shrink-0" />
-              <Input
-                value={emailInvite}
-                onChange={(e) => setEmailInvite(e.target.value)}
-                placeholder="Invite by email..."
-                className="h-8 text-sm"
-                onKeyDown={(e) => e.key === "Enter" && handleInviteByEmail()}
-              />
-              <Button
-                size="sm"
-                className="h-8 text-xs"
-                onClick={handleInviteByEmail}
-              >
-                Invite
-              </Button>
-            </div>
           </div>
         )}
 

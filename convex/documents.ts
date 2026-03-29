@@ -275,11 +275,15 @@ export const getById = query({
       return null;
     }
 
-    // Enforce workspace isolation only when caller provides explicit context.
+    // Enforce strict workspace isolation in authenticated app context.
     if (args.workspaceContextId !== undefined) {
-      if (document.workspaceId !== args.workspaceContextId) {
+      if (!document.workspaceId || document.workspaceId !== args.workspaceContextId) {
         return null;
       }
+    } else if (document.workspaceId && identity) {
+      // Authenticated users in personal context cannot open workspace docs.
+      return null;
+    }
     }
 
     if (document.isPublished && !document.isArchived) {
@@ -312,7 +316,22 @@ export const getById = query({
       return null;
     }
 
-    // All workspace members can view workspace documents
+    if (member.role === "admin") {
+      return document;
+    }
+
+    const access = await ctx.db
+      .query("documentAccess")
+      .withIndex("by_document_user", (q) =>
+        q.eq("documentId", args.documentId).eq("userId", userId),
+      )
+      .first();
+
+    if (!access) {
+      return null;
+    }
+    }
+
     return document;
   },
 });
