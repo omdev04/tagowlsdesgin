@@ -12,14 +12,18 @@ import { Coffee, Search, Trash, Trash2, Undo } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const TrashBox = () => {
   const router = useRouter();
   const params = useParams();
+  const { activeWorkspaceId } = useWorkspace();
 
   const { edgestore } = useEdgeStore();
 
-  const documents = useQuery(api.documents.getTrash);
+  const documents = useQuery(api.documents.getTrash, {
+    workspaceContextId: activeWorkspaceId || undefined,
+  });
   const restore = useMutation(api.documents.restore);
   const remove = useMutation(api.documents.remove);
   const removeAll = useMutation(api.documents.removeAll);

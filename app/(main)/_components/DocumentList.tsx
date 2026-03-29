@@ -33,6 +33,7 @@ import { Doc, Id } from "@/convex/_generated/dataModel";
 import { Item } from "./Item";
 
 import { FileIcon } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface SortableItemProps {
   document: Doc<"documents">;
@@ -106,9 +107,11 @@ export const DocumentList = ({
   const [orderedDocuments, setOrderedDocuments] = useState<Doc<"documents">[]>(
     [],
   );
+  const { activeWorkspaceId } = useWorkspace();
 
   const documents = useQuery(api.documents.getSidebar, {
     parentDocument: parentDocumentId,
+    workspaceContextId: activeWorkspaceId || undefined,
   });
 
   useEffect(() => {

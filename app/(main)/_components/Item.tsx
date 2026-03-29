@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { ActionTooltip } from "@/components/action-tooltip";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface ItemProps {
   id?: Id<"documents">;
@@ -54,11 +55,17 @@ export const Item = ({
 }: ItemProps) => {
   const router = useRouter();
   const params = useParams();
+  const { activeWorkspaceId } = useWorkspace();
   const create = useMutation(api.documents.create);
   const archive = useMutation(api.documents.archive);
   const document = useQuery(
     api.documents.getById,
-    id ? { documentId: id } : "skip",
+    id
+      ? {
+          documentId: id,
+          workspaceContextId: activeWorkspaceId ?? undefined,
+        }
+      : "skip",
   );
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -88,7 +95,11 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = create({ title: "Untitled", parentDocument: id }).then(
+    const promise = create({
+      title: "Untitled",
+      parentDocument: id,
+      workspaceId: activeWorkspaceId || undefined,
+    }).then(
       (documentId) => {
         if (!expanded) {
           onExpand?.();

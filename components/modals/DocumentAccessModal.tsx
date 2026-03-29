@@ -24,13 +24,22 @@ import {
 import { toast } from "sonner";
 
 export const DocumentAccessModal = () => {
-  const { isAccessModalOpen, accessDocumentId, onAccessModalClose } =
-    useWorkspace();
+  const {
+    isAccessModalOpen,
+    accessDocumentId,
+    onAccessModalClose,
+    activeWorkspaceId,
+  } = useWorkspace();
   const [filterQuery, setFilterQuery] = useState("");
 
   const document = useQuery(
     api.documents.getById,
-    accessDocumentId ? { documentId: accessDocumentId } : "skip",
+    accessDocumentId
+      ? {
+          documentId: accessDocumentId,
+          workspaceContextId: activeWorkspaceId ?? undefined,
+        }
+      : "skip",
   );
 
   const accesses = useQuery(
