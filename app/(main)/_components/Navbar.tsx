@@ -9,6 +9,7 @@ import { Title } from "./Title";
 import { Banner } from "./Banner";
 import { Menu } from "./Menu";
 import { Publish } from "./Publish";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -17,8 +18,10 @@ interface NavbarProps {
 
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const params = useParams();
+  const { activeWorkspaceId } = useWorkspace();
   const document = useQuery(api.documents.getById, {
     documentId: params.documentId as Id<"documents">,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   if (document === undefined) {

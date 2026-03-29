@@ -108,4 +108,104 @@ export default defineSchema({
     lastReadAt: v.number(),
   })
     .index("by_channel_user", ["channelId", "userId"]),
+
+  projects: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    key: v.string(),
+    icon: v.optional(v.string()),
+    createdBy: v.string(),
+    isArchived: v.optional(v.boolean()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_key", ["workspaceId", "key"]),
+
+  issues: defineTable({
+    projectId: v.id("projects"),
+    workspaceId: v.id("workspaces"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    status: v.string(),
+    priority: v.string(),
+    issueNumber: v.number(),
+    reporterId: v.string(),
+    dueDate: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_workspace", ["workspaceId"])
+    .index("by_status", ["projectId", "status"])
+    .index("by_reporter", ["reporterId"]),
+
+  issueAssignees: defineTable({
+    issueId: v.id("issues"),
+    userId: v.string(),
+    assignedBy: v.string(),
+    assignedAt: v.number(),
+  })
+    .index("by_issue", ["issueId"])
+    .index("by_user", ["userId"])
+    .index("by_issue_user", ["issueId", "userId"]),
+
+  labels: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    color: v.string(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_name", ["workspaceId", "name"]),
+
+  issueLabels: defineTable({
+    issueId: v.id("issues"),
+    labelId: v.id("labels"),
+    addedBy: v.string(),
+    addedAt: v.number(),
+  })
+    .index("by_issue", ["issueId"])
+    .index("by_label", ["labelId"])
+    .index("by_issue_label", ["issueId", "labelId"]),
+
+  issueComments: defineTable({
+    issueId: v.id("issues"),
+    userId: v.string(),
+    body: v.string(),
+    isEdited: v.optional(v.boolean()),
+    isDeleted: v.optional(v.boolean()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_issue", ["issueId"])
+    .index("by_user", ["userId"]),
+
+  activityLogs: defineTable({
+    issueId: v.id("issues"),
+    userId: v.string(),
+    action: v.string(),
+    field: v.optional(v.string()),
+    oldValue: v.optional(v.string()),
+    newValue: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_issue", ["issueId"])
+    .index("by_user", ["userId"]),
+
+  /** Custom Kanban columns created by admins for a specific project. */
+  projectColumns: defineTable({
+    projectId: v.id("projects"),
+    workspaceId: v.id("workspaces"),
+    label: v.string(),
+    color: v.string(),      // e.g. "bg-sky-500"
+    order: v.number(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_workspace", ["workspaceId"]),
 });

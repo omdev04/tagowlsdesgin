@@ -15,6 +15,7 @@ import {
 import { MoreHorizontal, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface MenuProps {
   documentId: Id<"documents">;
@@ -22,10 +23,12 @@ interface MenuProps {
 
 export const Menu = ({ documentId }: MenuProps) => {
   const router = useRouter();
+  const { activeWorkspaceId } = useWorkspace();
 
   const archive = useMutation(api.documents.archive);
   const document = useQuery(api.documents.getById, {
     documentId,
+    workspaceContextId: activeWorkspaceId ?? undefined,
   });
 
   const onArchive = () => {
