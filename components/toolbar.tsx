@@ -55,6 +55,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
     const timer = setTimeout(() => {
       update({
         id: initialData._id,
+        workspaceContextId: initialData.workspaceId ?? undefined,
         title: value || "Untitled",
       });
     }, 400);
@@ -71,6 +72,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
       event.preventDefault();
       update({
         id: initialData._id,
+        workspaceContextId: initialData.workspaceId ?? undefined,
         title: value || "Untitled",
       });
       setTimeout(() => {
@@ -82,6 +84,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const onIconSelect = (icon: string) => {
     update({
       id: initialData._id,
+      workspaceContextId: initialData.workspaceId ?? undefined,
       icon,
     });
   };
