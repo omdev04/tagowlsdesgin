@@ -18,6 +18,33 @@ async function requireAdmin(ctx: any, workspaceId: any, userId: string) {
   return member;
 }
 
+async function requireProjectView(ctx: any, projectId: any, userId: string) {
+  const project = await ctx.db.get(projectId);
+  if (!project) throw new Error("Project not found");
+
+  const member = await requireWorkspaceMember(ctx, project.workspaceId, userId);
+  if (member.role === "admin") {
+    return project;
+  }
+
+  if (!project.isAccessRestricted) {
+    return project;
+  }
+
+  const access = await ctx.db
+    .query("projectAccess")
+    .withIndex("by_project_user", (q: any) =>
+      q.eq("projectId", projectId).eq("userId", userId),
+    )
+    .first();
+
+  if (!access || (access.permission !== "view" && access.permission !== "edit")) {
+    throw new Error("No project access");
+  }
+
+  return project;
+}
+
 /** List all custom columns for a project, sorted by `order`. */
 export const getByProject = query({
   args: { projectId: v.id("projects") },
@@ -25,10 +52,7 @@ export const getByProject = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project) throw new Error("Project not found");
-
-    await requireWorkspaceMember(ctx, project.workspaceId, identity.subject);
+    await requireProjectView(ctx, args.projectId, identity.subject);
 
     const cols = await ctx.db
       .query("projectColumns")

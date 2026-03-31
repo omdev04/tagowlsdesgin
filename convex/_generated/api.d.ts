@@ -15,6 +15,7 @@ import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
 import type * as projectColumns from "../projectColumns.js";
 import type * as projects from "../projects.js";
+import type * as templates from "../templates.js";
 import type * as users from "../users.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   labels: typeof labels;
   projectColumns: typeof projectColumns;
   projects: typeof projects;
+  templates: typeof templates;
   users: typeof users;
   workspaces: typeof workspaces;
 }>;

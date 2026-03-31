@@ -11,11 +11,19 @@ import { IssueDetailModal } from "@/components/issues/IssueDetailModal";
 import { IssueCreateModal } from "@/components/issues/IssueCreateModal";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
 import { Spinner } from "@/components/spinner";
-import { ProjectMenu } from "../_components/ProjectMenu";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useIssues } from "@/hooks/useIssues";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, ListTodo, Clock, CheckCircle2, Circle } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  Globe2,
+  ListTodo,
+  Lock,
+  Plus,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ProjectPage() {
@@ -36,6 +44,15 @@ export default function ProjectPage() {
   );
   const stats = useQuery(
     api.projects.getStats,
+    projectId
+      ? {
+          projectId,
+          workspaceContextId: activeWorkspaceId ?? undefined,
+        }
+      : "skip",
+  );
+  const myAccess = useQuery(
+    api.projects.getMyAccess,
     projectId
       ? {
           projectId,
@@ -74,43 +91,93 @@ export default function ProjectPage() {
     );
   }
 
+  const statItems = [
+    {
+      label: "Total",
+      value: stats?.total ?? 0,
+      icon: ListTodo,
+      tone: "text-foreground",
+    },
+    {
+      label: "Todo",
+      value: stats?.todo ?? 0,
+      icon: Circle,
+      tone: "text-slate-500",
+    },
+    {
+      label: "In Progress",
+      value: stats?.inProgress ?? 0,
+      icon: Clock,
+      tone: "text-amber-600",
+    },
+    {
+      label: "Done",
+      value: stats?.done ?? 0,
+      icon: CheckCircle2,
+      tone: "text-emerald-600",
+    },
+  ];
+
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background dark:bg-dark">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-bold flex items-center gap-x-3 text-neutral-900 dark:text-neutral-100">
-            {project.icon ? (
-              <span>{project.icon}</span>
-            ) : (
-              <span className="text-neutral-400">{project.key.charAt(0)}</span>
+    <div className="flex h-full flex-col overflow-hidden bg-background">
+      <div className="border-b bg-card/70 px-5 py-4 backdrop-blur-sm md:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-3 truncate text-2xl font-semibold md:text-3xl">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+                {project.icon ?? project.key.charAt(0)}
+              </span>
+              <span className="truncate">{project.name}</span>
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {project.key}
+              {project.description ? ` · ${project.description}` : " · Project board"}
+            </p>
+            <div className="mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+              {project.isAccessRestricted ? (
+                <Lock className="h-3 w-3" />
+              ) : (
+                <Globe2 className="h-3 w-3" />
+              )}
+              {project.isAccessRestricted ? "Restricted access" : "Workspace visible"}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
             )}
-            {project.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {project.key} {project.description && `· ${project.description}`}
-          </p>
+            <Button
+              onClick={() => openIssueCreate()}
+              size="sm"
+              disabled={myAccess?.canEdit === false}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Issue
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-x-2">
-          {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
-          )}
-          <Button onClick={() => openIssueCreate()} size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            New
-          </Button>
-          <ProjectMenu
-            projectId={projectId}
-            isAdmin={isAdmin}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-          />
+        <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+          {statItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="rounded-lg border bg-background/80 px-3 py-2">
+                <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                <p className="mt-0.5 inline-flex items-center gap-1 text-lg font-semibold">
+                  <Icon className={cn("h-4 w-4", item.tone)} />
+                  {item.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { redirect, usePathname } from "next/navigation";
 import Navigation from "./_components/Navigation";
 import { SearchCommand } from "@/components/search-command";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { AiTemplateAssistant } from "@/components/templates/AiTemplateAssistant";
 import { useChat } from "@/hooks/useChat";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -52,6 +53,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
             {children}
           </div>
         )}
+        <AiTemplateAssistant />
       </main>
     </div>
   );

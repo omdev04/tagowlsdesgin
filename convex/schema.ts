@@ -18,7 +18,28 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_parent", ["userId", "parentDocument"])
+    .index("by_parent", ["parentDocument"])
     .index("by_workspace", ["workspaceId"]),
+
+  templates: defineTable({
+    ownerId: v.string(),
+    sourceDocumentId: v.id("documents"),
+    sourceWorkspaceId: v.optional(v.id("workspaces")),
+    title: v.string(),
+    description: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    coverImage: v.optional(v.string()),
+    category: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    isPublic: v.boolean(),
+    snapshot: v.string(),
+    usageCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    publishedAt: v.optional(v.number()),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_visibility", ["isPublic"]),
 
   users: defineTable({
     clerkId: v.string(),
@@ -116,12 +137,27 @@ export default defineSchema({
     key: v.string(),
     icon: v.optional(v.string()),
     createdBy: v.string(),
+    isAccessRestricted: v.optional(v.boolean()),
     isArchived: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_workspace", ["workspaceId"])
     .index("by_key", ["workspaceId", "key"]),
+
+  projectAccess: defineTable({
+    projectId: v.id("projects"),
+    workspaceId: v.id("workspaces"),
+    userId: v.string(),
+    permission: v.string(), // "view" | "edit"
+    grantedBy: v.string(),
+    grantedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_user", ["projectId", "userId"])
+    .index("by_workspace", ["workspaceId"])
+    .index("by_user_workspace", ["userId", "workspaceId"]),
 
   issues: defineTable({
     projectId: v.id("projects"),

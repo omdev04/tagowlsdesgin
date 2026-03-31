@@ -15,6 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Crown,
   Search,
   Shield,
@@ -30,7 +37,6 @@ export const TeamManageModal = () => {
   const { activeWorkspaceId, isTeamModalOpen, onTeamModalClose } =
     useWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
-  const [emailInvite, setEmailInvite] = useState("");
 
   const members = useQuery(
     api.workspaces.getMembers,
@@ -50,7 +56,6 @@ export const TeamManageModal = () => {
   );
 
   const addMember = useMutation(api.workspaces.addMember);
-  const addMemberByEmail = useMutation(api.workspaces.addMemberByEmail);
   const removeMember = useMutation(api.workspaces.removeMember);
   const updateRole = useMutation(api.workspaces.updateMemberRole);
 
@@ -70,23 +75,6 @@ export const TeamManageModal = () => {
         return "Member added!";
       },
       error: "Failed to add member.",
-    });
-  };
-
-  const handleInviteByEmail = () => {
-    if (!activeWorkspaceId || !emailInvite.trim()) return;
-    const promise = addMemberByEmail({
-      workspaceId: activeWorkspaceId,
-      email: emailInvite.trim(),
-      role: "editor",
-    });
-    toast.promise(promise, {
-      loading: "Inviting...",
-      success: () => {
-        setEmailInvite("");
-        return "Invite sent!";
-      },
-      error: "Failed to invite.",
     });
   };
 
@@ -134,7 +122,7 @@ export const TeamManageModal = () => {
 
   return (
     <Dialog open={isTeamModalOpen} onOpenChange={onTeamModalClose}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[80vh] overflow-y-auto border-neutral-800 bg-neutral-950 text-neutral-100 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Team Management</DialogTitle>
         </DialogHeader>
@@ -148,19 +136,19 @@ export const TeamManageModal = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search users by name or email..."
-                className="pl-8"
+                className="border-neutral-800 bg-neutral-900 pl-8 placeholder:text-neutral-500"
               />
             </div>
 
             {/* Search results */}
             {searchResults && searchResults.length > 0 && (
-              <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border p-2">
+              <div className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-neutral-800 bg-neutral-900/60 p-2">
                 {searchResults
                   .filter((u) => !existingUserIds.has(u.clerkId))
                   .map((user) => (
                     <div
                       key={user._id}
-                      className="flex items-center justify-between gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-neutral-800"
                     >
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -176,12 +164,7 @@ export const TeamManageModal = () => {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs"
-                        onClick={() => handleAddMember(user.clerkId)}
-                      >
+                      <Button size="sm" variant="outline" className="h-7 border-neutral-700 bg-neutral-900 text-xs hover:bg-neutral-800" onClick={() => handleAddMember(user.clerkId)}>
                         Add
                       </Button>
                     </div>
@@ -208,7 +191,7 @@ export const TeamManageModal = () => {
           {members?.map((member) => (
             <div
               key={member._id}
-              className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/70 px-3 py-2 transition-colors hover:bg-neutral-900"
             >
               <div className="flex items-center gap-2">
                 <Avatar className="h-7 w-7">
@@ -244,26 +227,33 @@ export const TeamManageModal = () => {
                 {roleIcon(member.role)}
                 {isAdmin && member.role !== "admin" && (
                   <>
-                    <select
+                    <Select
                       value={member.role}
-                      onChange={(e) =>
-                        handleUpdateRole(member.userId, e.target.value)
+                      onValueChange={(value) =>
+                        handleUpdateRole(member.userId, value)
                       }
-                      className="h-7 rounded border bg-transparent px-1 text-xs"
                     >
-                      <option value="editor">Editor</option>
-                      <option value="viewer">Viewer</option>
-                    </select>
+                      <SelectTrigger className="h-7 w-[94px] border-neutral-700 bg-neutral-900 px-2 text-xs">
+                        <SelectValue placeholder="Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <button
                       onClick={() => handleRemoveMember(member.userId)}
-                      className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
+                      className="rounded p-1 text-red-500 hover:bg-red-950/60"
+                      aria-label="Remove member"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </>
                 )}
                 {member.role === "admin" && (
-                  <span className="text-muted-foreground text-xs">Owner</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">
+                    <Crown className="h-3 w-3" /> Owner
+                  </span>
                 )}
               </div>
             </div>

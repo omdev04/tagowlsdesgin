@@ -38,6 +38,7 @@ interface ItemProps {
   onClick?: () => void;
   icon: LucideIcon;
   isCollapsed?: boolean;
+  showDot?: boolean;
 }
 
 export const Item = ({
@@ -52,6 +53,7 @@ export const Item = ({
   onExpand,
   expanded,
   isCollapsed,
+  showDot,
 }: ItemProps) => {
   const router = useRouter();
   const params = useParams();
@@ -124,7 +126,7 @@ export const Item = ({
           onClick={onClick}
           role="button"
           className={cn(
-            "text-muted-foreground hover:bg-primary/5 flex h-9 w-full cursor-pointer items-center justify-center",
+            "text-muted-foreground hover:bg-primary/5 relative flex h-9 w-full cursor-pointer items-center justify-center",
             active && "bg-primary/5 text-primary",
           )}
         >
@@ -134,6 +136,9 @@ export const Item = ({
             </span>
           ) : (
             <Icon className="text-muted-foreground h-5 w-5 shrink-0" />
+          )}
+          {showDot && (
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
           )}
         </div>
       </ActionTooltip>
@@ -168,6 +173,9 @@ export const Item = ({
       )}
 
       <span className="truncate">{label}</span>
+      {showDot && !isSearch && (
+        <span className="ml-auto mr-1 h-2 w-2 rounded-full bg-red-500" />
+      )}
       {isSearch && (
         <kbd className="bg-muted text-muted-foreground pointer-events-none ml-auto inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[.625rem] font-medium opacity-100 select-none dark:bg-neutral-700">
           <span className="text-xs">CTRL</span>K

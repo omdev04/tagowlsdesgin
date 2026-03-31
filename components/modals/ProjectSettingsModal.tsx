@@ -23,6 +23,13 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Settings,
   Users,
   AlertTriangle,
@@ -59,13 +66,26 @@ export const ProjectSettingsModal = ({
     api.workspaces.getMembers,
     activeWorkspaceId ? { workspaceId: activeWorkspaceId } : "skip"
   );
+  const myRole = useQuery(
+    api.workspaces.getMyRole,
+    activeWorkspaceId ? { workspaceId: activeWorkspaceId } : "skip",
+  );
+  const accessList = useQuery(
+    api.projects.getAccessList,
+    isOpen ? { projectId } : "skip",
+  );
 
   const updateProject = useMutation(api.projects.update);
   const removeProject = useMutation(api.projects.remove);
+  const setMemberAccess = useMutation(api.projects.setMemberAccess);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const isAdmin = myRole === "admin";
+  const displayedMembers: any[] =
+    accessList?.members ?? members?.filter((m) => !m.isPending) ?? [];
 
   // Sync form with project data when modal opens
   useState(() => {
@@ -104,6 +124,22 @@ export const ProjectSettingsModal = ({
       router.push("/projects");
     } catch (error) {
       toast.error("Failed to delete project");
+    }
+  };
+
+  const handleAccessChange = async (
+    userId: string,
+    permission: "none" | "view" | "edit",
+  ) => {
+    try {
+      await setMemberAccess({
+        projectId,
+        userId,
+        permission,
+      });
+      toast.success("Project access updated");
+    } catch (error) {
+      toast.error("Failed to update project access");
     }
   };
 
@@ -211,50 +247,96 @@ export const ProjectSettingsModal = ({
           <TabsContent value="members" className="mt-4">
             <div className="mb-4">
               <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                Team Members
+                Project Access
               </h4>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Workspace members who can access this project
+                Admin can control who can access this project and at what level
               </p>
+              {accessList && (
+                <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Mode: {accessList.isRestricted ? "Restricted" : "Open to all workspace members"}
+                </p>
+              )}
             </div>
 
             <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
-              {members?.filter((m) => !m.isPending).map((member) => (
+              {displayedMembers.map((entry: any) => {
+                const member = entry.member ?? entry;
+                const user = entry.user ?? member.user;
+                const effectivePermission = entry.effectivePermission ?? "edit";
+
+                return (
                 <div
                   key={member._id}
                   className="flex items-center justify-between px-3 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-900"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={member.user?.imageUrl} />
+                      <AvatarImage src={user?.imageUrl} />
                       <AvatarFallback className="text-xs">
-                        {(member.user?.name ?? "U").charAt(0).toUpperCase()}
+                        {(user?.name ?? "U").charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        {member.user?.name ?? "Unknown User"}
+                        {user?.name ?? "Unknown User"}
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {member.user?.email}
+                        {user?.email}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {roleIcon(member.role)}
-                    <span
-                      className={cn(
-                        "rounded-md px-2 py-0.5 text-xs font-medium capitalize",
-                        roleBadge(member.role)
-                      )}
-                    >
-                      {member.role}
-                    </span>
+                    {member.role === "admin" ? (
+                      <>
+                        {roleIcon("admin")}
+                        <span
+                          className={cn(
+                            "rounded-md px-2 py-0.5 text-xs font-medium capitalize",
+                            roleBadge("admin"),
+                          )}
+                        >
+                          full
+                        </span>
+                      </>
+                    ) : isAdmin ? (
+                      <Select
+                        value={effectivePermission}
+                        onValueChange={(value) =>
+                          handleAccessChange(
+                            member.userId,
+                            value as "none" | "view" | "edit",
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[130px]">
+                          <SelectValue placeholder="Select access" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No access</SelectItem>
+                          <SelectItem value="view">View only</SelectItem>
+                          <SelectItem value="edit">Edit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span
+                        className={cn(
+                          "rounded-md px-2 py-0.5 text-xs font-medium capitalize",
+                          effectivePermission === "none"
+                            ? "bg-neutral-100 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300"
+                            : effectivePermission === "view"
+                              ? roleBadge("viewer")
+                              : roleBadge("editor"),
+                        )}
+                      >
+                        {effectivePermission}
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
 
-              {(!members || members.filter((m) => !m.isPending).length === 0) && (
+              {displayedMembers.length === 0 && (
                 <div className="py-8 text-center text-sm text-neutral-500">
                   No members found
                 </div>
@@ -262,8 +344,8 @@ export const ProjectSettingsModal = ({
             </div>
 
             <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-              To add or remove members, manage them at the workspace level from
-              the sidebar.
+              Workspace admins always have full access. Set users to "No access"
+              to block project visibility.
             </p>
           </TabsContent>
 

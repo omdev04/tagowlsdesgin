@@ -71,27 +71,27 @@ export const ChatMessage = ({
   return (
     <div
       className={cn(
-        "group relative flex px-6",
-        isGrouped ? "py-0.5" : "mt-3 py-1",
+        "group relative flex px-4 md:px-6",
+        isGrouped ? "py-0.5" : "mt-2 py-1",
         message.isDeleted && "opacity-40",
         isOwnMessage ? "justify-end" : "justify-start",
       )}
     >
       <div
         className={cn(
-          "flex max-w-[78%] items-end gap-2",
+          "flex max-w-[80%] items-end gap-2.5",
           isOwnMessage ? "flex-row-reverse" : "flex-row",
         )}
       >
         {!isGrouped ? (
-          <Avatar className="h-8 w-8 shrink-0 self-end">
+          <Avatar className="h-7 w-7 shrink-0 self-end ring-1 ring-border/60">
             <AvatarImage src={message.user?.imageUrl} />
             <AvatarFallback className="text-xs font-semibold">
               {(message.user?.name ?? "?").charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="w-8 shrink-0" />
+          <div className="w-7 shrink-0" />
         )}
 
         <div className={cn("min-w-0", isOwnMessage ? "items-end" : "items-start")}>
@@ -116,19 +116,19 @@ export const ChatMessage = ({
 
           <div
             className={cn(
-              "relative rounded-2xl px-3 py-2 shadow-sm",
+              "relative rounded-2xl border px-3 py-2.5 shadow-xs",
               isOwnMessage
-                ? "rounded-br-md bg-blue-600 text-white"
-                : "rounded-bl-md bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100",
+                ? "rounded-br-md border-primary/50 bg-primary text-primary-foreground"
+                : "rounded-bl-md border-border/80 bg-card text-card-foreground",
             )}
           >
             {message.replyToMessage && (
               <div
                 className={cn(
-                  "mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs",
+                  "mb-2 rounded-lg border-l-2 px-2 py-1 text-xs",
                   isOwnMessage
-                    ? "border-white/60 bg-white/15 text-white/90"
-                    : "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-300",
+                    ? "border-primary-foreground/50 bg-primary-foreground/10 text-primary-foreground/90"
+                    : "border-primary/60 bg-primary/5 text-primary",
                 )}
               >
                 <span className="font-medium">
@@ -150,17 +150,17 @@ export const ChatMessage = ({
                     if (e.key === "Escape") setIsEditing(false);
                   }}
                   className={cn(
-                    "h-8 min-w-[220px] rounded border px-2 text-sm outline-none",
+                    "h-8 min-w-[220px] rounded-lg border px-2 text-sm outline-none",
                     isOwnMessage
-                      ? "border-white/30 bg-white/10 text-white placeholder:text-white/60"
-                      : "border-neutral-300 bg-transparent dark:border-neutral-700",
+                      ? "border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/60"
+                      : "border-border bg-background",
                   )}
                 />
                 <button
                   onClick={handleEdit}
                   className={cn(
                     "rounded p-1",
-                    isOwnMessage ? "hover:bg-white/10" : "hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                    isOwnMessage ? "hover:bg-primary-foreground/10" : "hover:bg-muted",
                   )}
                 >
                   <Check className="h-3.5 w-3.5 text-green-500" />
@@ -169,7 +169,7 @@ export const ChatMessage = ({
                   onClick={() => setIsEditing(false)}
                   className={cn(
                     "rounded p-1",
-                    isOwnMessage ? "hover:bg-white/10" : "hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                    isOwnMessage ? "hover:bg-primary-foreground/10" : "hover:bg-muted",
                   )}
                 >
                   <X className="h-3.5 w-3.5 text-red-500" />
@@ -188,13 +188,13 @@ export const ChatMessage = ({
       {!message.isDeleted && !isEditing && (
         <div
           className={cn(
-            "absolute top-0 hidden items-center gap-0.5 rounded border bg-white shadow-sm group-hover:flex dark:border-neutral-700 dark:bg-neutral-800",
-            isOwnMessage ? "left-8" : "right-8",
+            "absolute top-0 z-10 hidden items-center gap-0.5 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur group-hover:flex",
+            isOwnMessage ? "left-7" : "right-7",
           )}
         >
           <button
             onClick={() => setReplyTo(message._id)}
-            className="rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+            className="rounded p-1 hover:bg-muted"
             title="Reply"
           >
             <CornerUpLeft className="h-3.5 w-3.5" />
@@ -205,7 +205,7 @@ export const ChatMessage = ({
                 setEditBody(message.body);
                 setIsEditing(true);
               }}
-              className="rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              className="rounded p-1 hover:bg-muted"
               title="Edit"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -214,7 +214,7 @@ export const ChatMessage = ({
           {(isOwnMessage || isAdmin) && (
             <button
               onClick={handleDelete}
-              className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+              className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

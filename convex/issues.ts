@@ -12,6 +12,43 @@ async function requireWorkspaceMember(ctx: any, workspaceId: any, userId: string
   return member;
 }
 
+async function requireProjectPermission(
+  ctx: any,
+  projectId: any,
+  userId: string,
+  needed: "view" | "edit",
+) {
+  const project = await ctx.db.get(projectId);
+  if (!project) throw new Error("Project not found");
+
+  const member = await requireWorkspaceMember(ctx, project.workspaceId, userId);
+
+  if (member.role === "admin") {
+    return { project, member };
+  }
+
+  if (!project.isAccessRestricted) {
+    return { project, member };
+  }
+
+  const access = await ctx.db
+    .query("projectAccess")
+    .withIndex("by_project_user", (q: any) =>
+      q.eq("projectId", projectId).eq("userId", userId),
+    )
+    .first();
+
+  if (!access) {
+    throw new Error("No project access");
+  }
+
+  if (needed === "edit" && access.permission !== "edit") {
+    throw new Error("Edit access required");
+  }
+
+  return { project, member };
+}
+
 async function logActivity(
   ctx: any,
   issueId: any,
@@ -45,10 +82,12 @@ export const create = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project) throw new Error("Project not found");
-
-    await requireWorkspaceMember(ctx, project.workspaceId, identity.subject);
+    const { project } = await requireProjectPermission(
+      ctx,
+      args.projectId,
+      identity.subject,
+      "edit",
+    );
 
     const lastIssue = await ctx.db
       .query("issues")
@@ -104,10 +143,12 @@ export const getByProject = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project) throw new Error("Project not found");
-
-    await requireWorkspaceMember(ctx, project.workspaceId, identity.subject);
+    await requireProjectPermission(
+      ctx,
+      args.projectId,
+      identity.subject,
+      "view",
+    );
 
     let issues = await ctx.db
       .query("issues")
@@ -189,7 +230,7 @@ export const getById = query({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "view");
 
     const assignees = await ctx.db
       .query("issueAssignees")
@@ -248,7 +289,12 @@ export const update = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    const member = await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    const { member } = await requireProjectPermission(
+      ctx,
+      issue.projectId,
+      identity.subject,
+      "edit",
+    );
 
     const assignees = await ctx.db
       .query("issueAssignees")
@@ -286,7 +332,12 @@ export const remove = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    const member = await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    const { member } = await requireProjectPermission(
+      ctx,
+      issue.projectId,
+      identity.subject,
+      "edit",
+    );
 
     const assignees = await ctx.db
       .query("issueAssignees")
@@ -319,7 +370,7 @@ export const addAssignee = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    const member = await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "edit");
 
     const targetMember = await requireWorkspaceMember(ctx, issue.workspaceId, args.userId);
 
@@ -370,7 +421,7 @@ export const removeAssignee = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "edit");
 
     const assignee = await ctx.db
       .query("issueAssignees")
@@ -412,7 +463,7 @@ export const addLabel = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "edit");
 
     const existing = await ctx.db
       .query("issueLabels")
@@ -458,7 +509,7 @@ export const removeLabel = mutation({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "edit");
 
     const issueLabel = await ctx.db
       .query("issueLabels")
@@ -494,7 +545,7 @@ export const getActivities = query({
     const issue = await ctx.db.get(args.issueId);
     if (!issue) throw new Error("Issue not found");
 
-    await requireWorkspaceMember(ctx, issue.workspaceId, identity.subject);
+    await requireProjectPermission(ctx, issue.projectId, identity.subject, "view");
 
     const activities = await ctx.db
       .query("activityLogs")

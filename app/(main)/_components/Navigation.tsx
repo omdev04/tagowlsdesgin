@@ -2,7 +2,7 @@
 
 import React, { ComponentRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
@@ -24,6 +24,7 @@ import {
   Trash,
   Users,
   Folder,
+  LayoutTemplate,
 } from "lucide-react";
 import {
   Popover,
@@ -53,6 +54,15 @@ const Navigation = () => {
   const syncUser = useMutation(api.users.syncUser);
   const { user } = useUser();
   const createWsDoc = useMutation(api.workspaces.createDocument);
+
+  const unreadCounts = useQuery(
+    api.chat.getUnreadCounts,
+    activeWorkspaceId ? { workspaceId: activeWorkspaceId } : "skip",
+  );
+
+  const hasUnreadChat = Object.values(unreadCounts ?? {}).some(
+    (value) => typeof value === "number" && value > 0,
+  );
 
   // Sync user on mount
   useEffect(() => {
@@ -206,11 +216,18 @@ const Navigation = () => {
             {activeWorkspaceId && (
               <Item label="Projects" icon={Folder} onClick={resetWidth} isCollapsed />
             )}
+            <Item label="Templates" icon={LayoutTemplate} onClick={resetWidth} isCollapsed />
             {activeWorkspaceId && (
               <Item label="Team" icon={Users} onClick={resetWidth} isCollapsed />
             )}
             {activeWorkspaceId && (
-              <Item label="Chat" icon={MessageCircle} onClick={resetWidth} isCollapsed />
+              <Item
+                label="Chat"
+                icon={MessageCircle}
+                onClick={resetWidth}
+                isCollapsed
+                showDot={hasUnreadChat}
+              />
             )}
             <Item label="New page" icon={PlusCircle} onClick={resetWidth} isCollapsed />
             <Item label="Trash" icon={Trash} onClick={resetWidth} isCollapsed />
@@ -225,11 +242,17 @@ const Navigation = () => {
               {activeWorkspaceId && (
                 <Item label="Projects" icon={Folder} onClick={() => router.push("/projects")} />
               )}
+              <Item label="Templates" icon={LayoutTemplate} onClick={() => router.push("/templates")} />
               {activeWorkspaceId && (
                 <Item label="Team" icon={Users} onClick={onTeamModalOpen} />
               )}
               {activeWorkspaceId && (
-                <Item label="Chat" icon={MessageCircle} onClick={toggleChat} />
+                <Item
+                  label="Chat"
+                  icon={MessageCircle}
+                  onClick={toggleChat}
+                  showDot={hasUnreadChat}
+                />
               )}
               <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
             </div>
