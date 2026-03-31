@@ -430,7 +430,7 @@ export const ChatPanel = () => {
   const openMeetFromInvite = useCallback((roomId?: string) => {
     const channelId = resolveChannelIdFromRoom(roomId);
     if (!channelId) {
-      toast.info("Meeting invite received. Open the channel to join the call.");
+      toast.info("Meet (Beta) invite received. Open the channel to join the call.");
       return;
     }
 
@@ -459,8 +459,8 @@ export const ChatPanel = () => {
       if (!alreadyPrompted) {
         window.localStorage.setItem("meet_push_prompted", "1");
 
-        toast.message("Enable meeting alerts", {
-          description: "Allow notifications to receive meeting invites when this tab is inactive.",
+        toast.message("Enable Meet (Beta) alerts", {
+          description: "Allow notifications to receive Meet (Beta) invites when this tab is inactive.",
           action: {
             label: "Enable",
             onClick: () => {
@@ -576,11 +576,11 @@ export const ChatPanel = () => {
         const latestInvite = invites[invites.length - 1];
         startRingtoneLoop();
 
-        toast.info("Incoming meeting invite", {
-          description: `${latestInvite?.fromUserId || "A teammate"} started a channel meeting.`,
+        toast.info("Incoming Meet (Beta) invite", {
+          description: `${latestInvite?.fromUserId || "A teammate"} started Channel Meet (Beta).`,
           duration: 12000,
           action: {
-            label: "Open Meet",
+            label: "Open Meet (Beta)",
             onClick: () => {
               openMeetFromInvite(latestInvite?.roomId);
               stopRingtoneLoop();
@@ -790,10 +790,10 @@ export const ChatPanel = () => {
                       ? "border-primary/20 bg-primary/10 text-primary"
                       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
-                  title="Open channel meet"
+                  title="Open Channel Meet (Beta)"
                 >
                   <Video className="h-3.5 w-3.5" />
-                  <span>{isMeetRunning && isMeetMinimized ? "Restore" : "Meet"}</span>
+                  <span>{isMeetRunning && isMeetMinimized ? "Restore" : "Meet (Beta)"}</span>
                 </button>
 
                 {isRinging && (
