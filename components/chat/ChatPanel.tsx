@@ -34,7 +34,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
-const RTC_BASE_URL = process.env.NEXT_PUBLIC_RTC_BACKEND_URL || "http://localhost:3001";
+const RTC_BASE_URL =
+  process.env.NEXT_PUBLIC_RTC_BACKEND_URL || "https://rtc-backend-seven.vercel.app";
 const RTC_RINGTONE_URL = process.env.NEXT_PUBLIC_MEET_RINGTONE_URL || "/sounds/minion_beep.mp3";
 
 function urlBase64ToUint8Array(base64String: string) {

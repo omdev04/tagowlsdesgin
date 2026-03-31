@@ -12,7 +12,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const RTC_BASE_URL = process.env.NEXT_PUBLIC_RTC_BACKEND_URL || "http://localhost:3001";
+const RTC_BASE_URL =
+  process.env.NEXT_PUBLIC_RTC_BACKEND_URL || "https://rtc-backend-seven.vercel.app";
 const RTC_ADMIN_KEY =
   process.env.NEXT_PUBLIC_RTC_ADMIN_KEY ||
   (process.env.NODE_ENV !== "production" ? "dev_meet_admin_key" : "");
