@@ -5,11 +5,13 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
+    "dev": "node server.js",
     "start": "node server.js"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "livekit-server-sdk": "^2.14.0"
+    "peer": "^1.0.2",
+    "web-push": "^3.6.7"
   }
 }
