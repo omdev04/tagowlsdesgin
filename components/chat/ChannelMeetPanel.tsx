@@ -30,8 +30,14 @@ type JoinPayload = {
 };
 
 type RemoteStream = {
-  participantId: string;
+  peerId: string;
+  userId: string;
   stream: MediaStream;
+};
+
+type ParticipantEntry = {
+  userId: string;
+  peerId: string;
 };
 
 type ChannelMemberAccess = {
@@ -80,6 +86,56 @@ function normalizeJoinPayload(payload: unknown, fallbackUserId: string): JoinPay
   };
 }
 
+function normalizeParticipantsPayload(payload: unknown): ParticipantEntry[] {
+  const raw = (payload ?? {}) as {
+    participants?: unknown;
+    participantDetails?: unknown;
+  };
+
+  const participantsSource = Array.isArray(raw.participantDetails)
+    ? raw.participantDetails
+    : Array.isArray(raw.participants)
+      ? raw.participants
+      : [];
+  const seenPeerIds = new Set<string>();
+  const normalized: ParticipantEntry[] = [];
+
+  for (const participant of participantsSource) {
+    if (typeof participant === "string") {
+      const userId = safeTrim(participant);
+      if (!userId || seenPeerIds.has(userId)) {
+        continue;
+      }
+
+      seenPeerIds.add(userId);
+      normalized.push({ userId, peerId: userId });
+      continue;
+    }
+
+    if (!participant || typeof participant !== "object") {
+      continue;
+    }
+
+    const value = participant as {
+      userId?: unknown;
+      peerId?: unknown;
+    };
+    const participantUserId = safeTrim(value.userId);
+    const participantPeerId = safeTrim(value.peerId) || participantUserId;
+    if (!participantUserId || !participantPeerId || seenPeerIds.has(participantPeerId)) {
+      continue;
+    }
+
+    seenPeerIds.add(participantPeerId);
+    normalized.push({
+      userId: participantUserId,
+      peerId: participantPeerId,
+    });
+  }
+
+  return normalized;
+}
+
 function buildPeerOptions(peerConfig: JoinPayload["peerConfig"]) {
   const backendUrl = new URL(RTC_BASE_URL);
   const secure = backendUrl.protocol === "https:";
@@ -104,6 +160,10 @@ function toJoinErrorMessage(error: unknown) {
 
   if (message.toLowerCase().includes("route not found")) {
     return "RTC backend is outdated. Restart rtc-backend to enable channel meeting routes.";
+  }
+
+  if (message.toLowerCase().includes("is taken")) {
+    return "Peer ID conflict detected. Please retry joining once.";
   }
 
   return message;
@@ -166,7 +226,7 @@ export function ChannelMeetPanel({
   const [callState, setCallState] = useState<"idle" | "connecting" | "joined">("idle");
   const [error, setError] = useState<string | null>(null);
   const [permissionState, setPermissionState] = useState<"unknown" | "requesting" | "granted" | "denied">("unknown");
-  const [participants, setParticipants] = useState<string[]>([]);
+  const [participants, setParticipants] = useState<ParticipantEntry[]>([]);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
@@ -176,10 +236,12 @@ export function ChannelMeetPanel({
   const peerRef = useRef<Peer | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const activeCallsRef = useRef<Map<string, MediaConnection>>(new Map());
-  const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+  const remoteStreamsRef = useRef<Map<string, { userId: string; stream: MediaStream }>>(new Map());
   const participantsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinedOnBackendRef = useRef(false);
   const announcementSentRef = useRef(false);
+  const localPeerIdRef = useRef<string>("");
+  const peerToUserMapRef = useRef<Map<string, string>>(new Map());
 
   const userId = useMemo(() => safeTrim(user?.id), [user?.id]);
   const displayName = useMemo(() => safeTrim(user?.fullName) || "A teammate", [user?.fullName]);
@@ -219,22 +281,34 @@ export function ChannelMeetPanel({
     return participantNameMap.get(participantId) || participantId;
   };
 
+  const getParticipantLabelByPeerId = (peerId: string) => {
+    const participantId = peerToUserMapRef.current.get(peerId) || peerId;
+    return getParticipantLabel(participantId);
+  };
+
   const syncRemoteStreamsState = () => {
     setRemoteStreams(
-      Array.from(remoteStreamsRef.current.entries()).map(([participantId, stream]) => ({
-        participantId,
-        stream,
+      Array.from(remoteStreamsRef.current.entries()).map(([peerId, value]) => ({
+        peerId,
+        userId: value.userId,
+        stream: value.stream,
       })),
     );
   };
 
-  const removeRemoteStream = (participantId: string) => {
-    remoteStreamsRef.current.delete(participantId);
+  const removeRemoteStream = (peerId: string) => {
+    remoteStreamsRef.current.delete(peerId);
     syncRemoteStreamsState();
   };
 
   const registerMediaCall = (call: MediaConnection) => {
     const peerId = call.peer;
+    const metadata = (call.metadata ?? {}) as { fromUserId?: unknown };
+    const fromUserId = safeTrim(metadata.fromUserId);
+    if (fromUserId) {
+      peerToUserMapRef.current.set(peerId, fromUserId);
+    }
+
     const existing = activeCallsRef.current.get(peerId);
     if (existing && existing !== call) {
       try {
@@ -247,7 +321,11 @@ export function ChannelMeetPanel({
     activeCallsRef.current.set(peerId, call);
 
     call.on("stream", (stream) => {
-      remoteStreamsRef.current.set(peerId, stream);
+      const participantUserId = peerToUserMapRef.current.get(peerId) || peerId;
+      remoteStreamsRef.current.set(peerId, {
+        userId: participantUserId,
+        stream,
+      });
       syncRemoteStreamsState();
     });
 
@@ -291,6 +369,8 @@ export function ChannelMeetPanel({
     }
 
     remoteStreamsRef.current.clear();
+    peerToUserMapRef.current.clear();
+    localPeerIdRef.current = "";
     setRemoteStreams([]);
 
     if (stopLocalTracks && localStreamRef.current) {
@@ -301,7 +381,7 @@ export function ChannelMeetPanel({
     }
   };
 
-  const fetchParticipants = async () => {
+  const fetchParticipants = async (): Promise<ParticipantEntry[]> => {
     if (!roomId || !userId) return [];
 
     const response = await fetch(
@@ -312,28 +392,36 @@ export function ChannelMeetPanel({
     }
 
     const payload = await response.json().catch(() => ({}));
-    const participantIds = Array.isArray(payload.participants)
-      ? payload.participants.filter((value: unknown) => typeof value === "string")
-      : [];
+    const normalizedParticipants = normalizeParticipantsPayload(payload);
 
-    setParticipants(participantIds);
-    return participantIds;
+    const nextPeerToUser = new Map<string, string>();
+    for (const participant of normalizedParticipants) {
+      nextPeerToUser.set(participant.peerId, participant.userId);
+    }
+    if (localPeerIdRef.current && userId) {
+      nextPeerToUser.set(localPeerIdRef.current, userId);
+    }
+    peerToUserMapRef.current = nextPeerToUser;
+
+    setParticipants(normalizedParticipants);
+    return normalizedParticipants;
   };
 
-  const connectToParticipants = (participantIds: string[]) => {
+  const connectToParticipants = (participantEntries: ParticipantEntry[]) => {
     const peer = peerRef.current;
     const stream = localStreamRef.current;
     if (!peer || !stream) return;
 
-    for (const participantId of participantIds) {
-      if (participantId === userId) continue;
-      if (activeCallsRef.current.has(participantId)) continue;
+    for (const participant of participantEntries) {
+      if (participant.userId === userId) continue;
+      if (!participant.peerId) continue;
+      if (activeCallsRef.current.has(participant.peerId)) continue;
 
       // Deterministic dialing avoids duplicate call pairs.
-      if (userId.localeCompare(participantId) >= 0) continue;
+      if (userId.localeCompare(participant.userId) >= 0) continue;
 
       try {
-        const call = peer.call(participantId, stream, {
+        const call = peer.call(participant.peerId, stream, {
           metadata: {
             roomId,
             fromUserId: userId,
@@ -346,16 +434,18 @@ export function ChannelMeetPanel({
     }
   };
 
-  const pruneDisconnectedParticipants = (participantIds: string[]) => {
-    for (const [participantId, call] of activeCallsRef.current.entries()) {
-      if (!participantIds.includes(participantId)) {
+  const pruneDisconnectedParticipants = (participantEntries: ParticipantEntry[]) => {
+    const activePeerIds = new Set(participantEntries.map((participant) => participant.peerId));
+
+    for (const [participantPeerId, call] of activeCallsRef.current.entries()) {
+      if (!activePeerIds.has(participantPeerId)) {
         try {
           call.close();
         } catch {
           // noop
         }
-        activeCallsRef.current.delete(participantId);
-        removeRemoteStream(participantId);
+        activeCallsRef.current.delete(participantPeerId);
+        removeRemoteStream(participantPeerId);
       }
     }
   };
@@ -367,9 +457,9 @@ export function ChannelMeetPanel({
 
     participantsPollRef.current = setInterval(() => {
       fetchParticipants()
-        .then((participantIds) => {
-          connectToParticipants(participantIds);
-          pruneDisconnectedParticipants(participantIds);
+        .then((participantEntries) => {
+          connectToParticipants(participantEntries);
+          pruneDisconnectedParticipants(participantEntries);
         })
         .catch(() => {});
     }, 2000);
@@ -529,6 +619,8 @@ export function ChannelMeetPanel({
       const joinPayload = normalizeJoinPayload(await joinRes.json().catch(() => ({})), userId);
       joinedOnBackend = true;
       joinedOnBackendRef.current = true;
+      localPeerIdRef.current = joinPayload.peerId;
+      peerToUserMapRef.current.set(joinPayload.peerId, userId);
 
       const peer = await initializePeer(joinPayload.peerId, joinPayload.peerConfig);
       peerRef.current = peer;
@@ -542,9 +634,9 @@ export function ChannelMeetPanel({
         setError(toJoinErrorMessage(peerError));
       });
 
-      setParticipants([userId]);
-      const participantIds = await fetchParticipants();
-      connectToParticipants(participantIds);
+      setParticipants([{ userId, peerId: joinPayload.peerId }]);
+      const participantEntries = await fetchParticipants();
+      connectToParticipants(participantEntries);
       startParticipantsPolling();
 
       if (isAdmin) {
@@ -824,12 +916,12 @@ export function ChannelMeetPanel({
 
             {visibleRemoteStreams.map((remote) => (
               <div
-                key={remote.participantId}
+                key={remote.peerId}
                 className={cn("relative overflow-hidden rounded-md border bg-card", tileClassName)}
               >
                 <StreamPlayer stream={remote.stream} />
                 <span className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-0.5 text-[10px] text-white">
-                  {getParticipantLabel(remote.participantId)}
+                  {getParticipantLabelByPeerId(remote.peerId)}
                 </span>
               </div>
             ))}
